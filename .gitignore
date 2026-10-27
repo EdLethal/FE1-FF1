@@ -1,0 +1,6 @@
+# ROMs e arquivos gerados nunca devem ir para o repositório
+*.nes
+*.sfc
+*.smc
+*.o
+*.sym
