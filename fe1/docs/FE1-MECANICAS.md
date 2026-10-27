@@ -28,7 +28,7 @@ Não sei dizer se as mudanças nos itens são balanceamento intencional do patch
 | +03 | HP atual | +10 | y |
 | +04 | HP máximo | +11 | x |
 | +05 | experiência | +12 | desconhecido (as buscas de unidade pulam quem tem `$FF` ou `$F0` aqui; provavelmente "inativa") |
-| +06 | cell (índice das tabelas de terreno) | +13 | 4 itens |
+| +06 | cell (índice de terreno; provavelmente o tile sob a unidade) | +13 | 4 itens |
 | +07 | força | +17 | 4 contadores de usos |
 | +08 | perícia | | |
 | +09 | nível de arma | | |
@@ -88,15 +88,43 @@ Observação de leitura (não afeta o jogo, só curiosidade): em `ComputeFightHi
 
 ## 4. Movimento
 
-O que li: a rotina `$8AE8` percorre um mapa de movimento por célula em que os 6 bits baixos parecem ser o custo
-de entrar na célula (0 = bloqueado) e os 2 bits altos uma direção, descontando o custo do movimento da unidade.
-Isso é **dedução de uma rotina só**.
+Lido do código (a rotina em `$8BE4` do banco 3 e `FUNC_03_9080`), é um sistema clássico de **pontos de movimento com custo por terreno**:
 
-**Ainda não achei:** o custo por tipo de terreno e por classe. As tabelas `Cell2TerrainBlue/Red` ($E828/$E8F8)
-mapeiam célula para tipo de terreno (`$0E` = aliado, `$1F` = inimigo), não para custo.
-Esse é o próximo ponto a investigar, porque é a peça central para uma versão em grade.
+1. A unidade começa com `mov` pontos. O mapa de alcance começa zerado, com `$FF` nas bordas.
+2. A busca cresce em "anéis" de custo acumulado: a cada passo, as células com custo `r` espalham para as 4 vizinhas
+   (cima, direita, baixo, esquerda).
+3. O custo de entrar numa vizinha é `JobMoveCosts[classe][terreno]`. O novo custo acumulado é `r + custo`.
+   `$FF` (intransponível) estoura o limite e a célula fica marcada como inalcançável.
+4. Cada célula guarda no mesmo byte o custo acumulado (6 bits baixos) e a **direção de onde veio** (2 bits altos),
+   que depois serve para reconstruir o caminho (`$8AE8`). Em empate de custo, o código sorteia (50%) qual caminho vale.
+5. Termina quando o anel chega a `mov`. Alcançáveis = células com custo acumulado ≤ `mov`.
+
+O terreno vem de `Cell2TerrainBlue` (quando o jogador se move) ou `Cell2TerrainRed` (inimigo), que traduzem o
+índice da célula do mapa em um dos 22 tipos de terreno. Duas células são especiais:
+- terreno **14** (`TERRAIN_ALLY`, `$0E`): custo `$FF` para todas as classes, então, pela tabela, **unidades aliadas
+  bloqueiam o caminho** (não verifiquei se outra parte do código abre alguma exceção);
+- terreno **31** (`TERRAIN_ENEMY`, `$1F`): o código troca pelo terreno que está sob o inimigo, lido de `Unit.cell`
+  (dedução: `cell` guarda o tile que o sprite da unidade cobre).
+
+A matriz completa (22 classes × 22 terrenos) está em `CLASSES-E-ITENS.md`. O que ela mostra:
+- **Só Pegasus e Dracoknight voam**: custo 1 em quase tudo (menos os terrenos 13, 14 e 20, que ninguém cruza).
+- Terrenos 0, 1, 10, 12, 15, 17, 18, 19 custam 1 para todas as classes (os "chão normal").
+- Terrenos 13, 14 e 20 são intransponíveis para todos.
+- Terreno 9 só voadores cruzam; terreno 11 só voadores, Pirate e Commando.
+- Terrenos 8 e 21 são quase idênticos entre si (custos 3 a 6; Cavalier, Knight, Archer, Ballistician, Horseman e General
+  não entram). Só o Priest difere entre os dois.
+
+Os 22 terrenos só têm número. Dar nome (floresta, montanha etc.) exige olhar os mapas e gráficos, e eu não fiz isso;
+qualquer nome que eu desse agora seria chute.
+
+**Bônus de terreno.** Existe uma tabela por terreno (`DAT_EBD8`) com valores altos nos terrenos caros
+(T3=20, T4=30, T5=15, T8=25, T11=30, T16=20). Ela é usada pela IA para pontuar posições. Parece um bônus defensivo
+de terreno, mas **não confirmei** se o cálculo de esquiva em batalha (`wUnk0310`) lê dela. O que sei: o item
+Light Sphere zera esse valor do segundo lutador, o que sugere que ele é mesmo um bônus de terreno.
 
 ## 5. Resumo para o crossover
 
 - Os números de combate do FE1 são simples e tabelados: dá para reproduzir em outro motor sem ambiguidade.
-- O que falta para o FF1 virar tático: custos de movimento por terreno e a origem dos status dos personagens fixos.
+- O movimento do FE1 também é simples e tabelado (pontos de movimento, custo por classe e terreno): dá para reproduzir.
+- O que falta: os nomes dos terrenos, a origem do bônus de terreno em batalha e a origem dos status dos
+  personagens fixos.

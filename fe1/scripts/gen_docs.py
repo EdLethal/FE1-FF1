@@ -61,8 +61,29 @@ for i in range(len(mine["might"])):
         continue
     item_md.append(f"| {i:02X} | {NAMES.get(i, '')} | " + " | ".join(str(v) for v in row) + " | " + "; ".join(ch) + " |")
 
+# ---- custos de movimento (data/data-0F-E828.asm)
+mem = {}
+for line in (proj / "data/data-0F-E828.asm").read_text().split("\n"):
+    m = re.match(r"^\s*/\* ([0-9A-Fa-f]{4}) \.\.\.\s*\*/ \.db (.*)$", line)
+    if m:
+        a = int(m.group(1), 16)
+        for k, t in enumerate(x for x in m.group(2).split(",") if x.strip().startswith("$")):
+            mem[a + k] = int(t.strip()[1:], 16)
+ptrs = [mem[0xE9C8 + 2 * i] | (mem[0xE9C8 + 2 * i + 1] << 8) for i in range(22)]
+move_md = ["| Classe | " + " | ".join(f"T{t}" for t in range(22)) + " |",
+           "|---|" + "---|" * 22]
+for (jid, name, _), p in zip(classes, ptrs):
+    cells = [("·" if mem[p + t] == 0xFF else str(mem[p + t])) for t in range(22)]
+    move_md.append(f"| {name} | " + " | ".join(cells) + " |")
+bonus = [mem[0xEBD8 + t] for t in range(22)]
+bonus_md = "| " + " | ".join(f"T{t}" for t in range(22)) + " |\n|" + "---|" * 22 + "\n| " + " | ".join(str(b) for b in bonus) + " |"
+
 out = proj / "docs/CLASSES-E-ITENS.md"
 out.parent.mkdir(exist_ok=True)
 out.write_text("<!-- gerado por scripts/gen_docs.py -->\n\n## Classes (22)\n\n" + "\n".join(class_md) +
+               "\n\n## Custo de movimento por classe e terreno\n\n"
+               "T0 a T21 são os 22 tipos de terreno (só tenho os números, não os nomes). `·` = intransponível ($FF).\n\n"
+               + "\n".join(move_md) +
+               "\n\n## Valor por terreno usado pela IA (`DAT_EBD8`)\n\n" + bonus_md +
                "\n\n## Itens (por id)\n\n" + "\n".join(item_md) + "\n")
-print("escrito:", out, "| classes:", len(classes), "| linhas de item:", len(item_md) - 2)
+print("escrito:", out, "| classes:", len(classes), "| linhas de item:", len(item_md) - 2, "| matriz:", len(move_md) - 2, "x 22")
