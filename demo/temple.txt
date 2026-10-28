@@ -1,0 +1,31 @@
+# Demo "Templo": placeholder do Templo dos Demonios (primeira masmorra do FF1) no motor do FE1.
+# O mapa substitui o mapa 1 (15 linhas x 32 colunas). Visual provisorio: usa as celulas do conjunto
+# de graficos do capitulo 1. Cada letra da legenda aponta para o numero (hex) de uma celula.
+# camera: linha e coluna iniciais da camera (a tela mostra 16 colunas por vez).
+camera: 0 8
+
+legend:
+  , = 30   grama (fora do templo)
+  . = 42   piso (grama por enquanto)
+  # = 5E   parede de tijolo (intransponivel)
+  P = B0   pilar (intransponivel)
+  G = 4B   portao
+  C = AB   bau
+  T = AE   trono
+
+map:
+,,,,,,####################,,,,,,
+,,,,,,#....P...TT...P....#,,,,,,
+,,,,,,#..................#,,,,,,
+,,,,,,#.PP............PP.#,,,,,,
+,,,,,,#..................#,,,,,,
+,,,,,,########....########,,,,,,
+,,,,,,#..................#,,,,,,
+,,,,,,#.C..PP......PP..C.#,,,,,,
+,,,,,,#..................#,,,,,,
+,,,,,,#..PP..........PP..#,,,,,,
+,,,,,,#..................#,,,,,,
+,,,,,,########.GG.########,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
