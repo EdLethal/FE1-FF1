@@ -23,10 +23,12 @@ TEMPLE_MAP = 12
 TEMPLE_SLOTS = [0x00, 0x02, 0x00, 0x02, 0x02, 0x00, 0x02, 0x00]
 ENEMY_BASE, ENEMY_SIZE = 0x94E0, 1136
 
-# Dialogos (ids do FF1): 1 = rei na abertura (vira o pedido da Sheeda), 2 = rei ao final (vira o final do capitulo).
+# Dialogos (ids do FF1): 1 = rei na abertura (vira o pedido da Sheeda), 2 = rei ao final (vira o final do capitulo),
+# 4 = fala do Garland antes da luta (vira a fala do Gazzak, escrita por voce e traduzida para o ingles).
 # Falas encurtadas e adaptadas das cenas do cap. 1 do FE; precisam caber no espaco do texto original.
 DIALOGUES = {
     1: "Prince Mars! Pirates of\nGarda took Talis castle\nand killed many people.\nPlease protect my father!",
+    4: "You have some nerve\ncoming here. Your\njourney ends here.\nDie!!",
     2: "Thank you, Mars. I will\nsend soldiers led by\nCaptain Oguma. Find the\nallies hiding in villages\nor held by the enemy.\nGo on to Orleans!!",
 }
 
