@@ -1,6 +1,6 @@
 """FF1 com cara do capitulo 1 do FE: classes dos 4 herois e inimigos renomeados (so dados de texto).
 
-Uso: python3 -I ff1/patch_cap1.py <FinalFantasy_USA.nes> <saida.nes>
+Uso: python3 -I ff1/patch_cap1.py <FinalFantasy_USA.nes> <saida.nes> [pasta do disassembly do FF1 com os .tbl]
 
 Classes (a mecanica por baixo continua a do FF1):
   Fighter -> LORD (Mars) | Thief -> CAVALRY (Kain) | Black Belt -> PEGASUS (Sheeda)
@@ -12,6 +12,7 @@ import sys
 
 sys.path.insert(0, __import__("os").path.dirname(__file__))
 from patch_names import enc, off  # noqa: E402
+from ff1text import Dialogue, load_tables  # noqa: E402
 
 CLASSES = {0: "LORD", 1: "CAVALRY", 2: "PEGASUS", 3: "PALADIN", 4: "PRIEST", 5: "MAGE"}
 ENEMIES = {0: "PIRATE", 1: "THIEF", 2: "HUNTER", 3: "HUNTER", 105: "GAZZAK"}
@@ -22,8 +23,15 @@ TEMPLE_MAP = 12
 TEMPLE_SLOTS = [0x00, 0x02, 0x00, 0x02, 0x02, 0x00, 0x02, 0x00]
 ENEMY_BASE, ENEMY_SIZE = 0x94E0, 1136
 
+# Dialogos (ids do FF1): 1 = rei na abertura (vira o pedido da Sheeda), 2 = rei ao final (vira o final do capitulo).
+# Falas encurtadas e adaptadas das cenas do cap. 1 do FE; precisam caber no espaco do texto original.
+DIALOGUES = {
+    1: "Prince Mars! Pirates of\nGarda took Talis castle\nand killed many people.\nPlease protect my father!",
+    2: "Thank you, Mars. I will\nsend soldiers led by\nCaptain Oguma. Find the\nallies hiding in villages\nor held by the enemy.\nGo on to Orleans!!",
+}
 
-def main(src, dst):
+
+def main(src, dst, disasm="/home/claude/ff1-build"):
     rom = bytearray(open(src, "rb").read())
     for idx, name in CLASSES.items():
         assert len(name) <= 7
@@ -48,6 +56,11 @@ def main(src, dst):
         out[2 * i], out[2 * i + 1] = p & 255, p >> 8
     assert len(out) <= ENEMY_SIZE, f"nomes de inimigos passaram do limite: {len(out)} > {ENEMY_SIZE}"
     rom[o:o + len(out)] = out
+    std, dte = load_tables(disasm + "/table_standard.tbl", disasm + "/table_dte.tbl")
+    dlg = Dialogue(rom, std, dte)
+    for i, text in DIALOGUES.items():
+        old, new = dlg.replace_in_place(i, text)
+        print(f"dialogo {i}: {new} de {old} bytes")
     dom = off(0x0B, 0x8000) + (64 + TEMPLE_MAP) * 8
     rom[dom:dom + 8] = bytes(TEMPLE_SLOTS)
     open(dst, "wb").write(rom)
@@ -55,4 +68,4 @@ def main(src, dst):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(*sys.argv[1:4])
